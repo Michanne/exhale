@@ -136,7 +136,7 @@ void connection_stage_complate(int stage) {
   vita_debug_log("connection_stage_complate - stage: %d\n", stage);
 }
 
-void connection_stage_failed(int stage, long code) {
+void connection_stage_failed(int stage, int code) {
   connection_failed_stage = stage;
   connection_failed_stage_code = code;
   vita_debug_log("connection_stage_failed - stage: %d, %d\n", stage, code);
@@ -144,6 +144,10 @@ void connection_stage_failed(int stage, long code) {
 
 bool connection_is_ready() {
   return connection_status != LI_DISCONNECTED;
+}
+
+bool connection_is_connected() {
+  return connection_status == LI_CONNECTED;
 }
 
 int connection_get_status() {

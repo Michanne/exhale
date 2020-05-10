@@ -208,7 +208,7 @@ int ui_connect_loop(int id, void *context, const input_data *input) {
       }
 
 mainloop:
-      while (connection_get_status() == LI_CONNECTED) {
+      while (connection_is_connected()) {
         sceKernelDelayThread(500 * 1000);
       }
 
