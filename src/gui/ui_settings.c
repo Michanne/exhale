@@ -384,6 +384,7 @@ enum {
   SETTINGS_JP_LAYOUT,
   SETTINGS_SHOW_FPS,
   SETTINGS_ENABLE_FRAME_PACER,
+  SETTINGS_CENTER_REGION_ONLY,
   SETTINGS_ENABLE_MAPPING,
   SETTINGS_BACK_DEADZONE,
   SETTINGS_SPECIAL_KEYS,
@@ -402,6 +403,7 @@ enum {
   SETTINGS_VIEW_JP_LAYOUT,
   SETTINGS_VIEW_SHOW_FPS,
   SETTINGS_VIEW_ENABLE_FRAME_PACER,
+  SETTINGS_VIEW_CENTER_REGION_ONLY,
   SETTINGS_VIEW_ENABLE_MAPPING,
   SETTINGS_VIEW_BACK_DEADZONE,
   SETTINGS_VIEW_SPECIAL_KEYS,
@@ -546,6 +548,13 @@ static int settings_loop(int id, void *context, const input_data *input) {
       did_change = 1;
       config.enable_frame_pacer = !config.enable_frame_pacer;
       break;
+    case SETTINGS_CENTER_REGION_ONLY:
+      if ((input->buttons & config.btn_confirm) == 0 || input->buttons & SCE_CTRL_HOLD) {
+        break;
+      }
+      did_change = 1;
+      config.center_region_only = !config.center_region_only;
+      break;
     case SETTINGS_ENABLE_MAPPING:
       if ((input->buttons & config.btn_confirm) == 0 || input->buttons & SCE_CTRL_HOLD) {
         break;
@@ -631,6 +640,9 @@ static int settings_loop(int id, void *context, const input_data *input) {
 
   sprintf(current, "%s", config.enable_frame_pacer ? "yes" : "no");
   MENU_REPLACE(SETTINGS_VIEW_ENABLE_FRAME_PACER, current);
+
+  sprintf(current, "%s", config.center_region_only ? "yes" : "no");
+  MENU_REPLACE(SETTINGS_VIEW_CENTER_REGION_ONLY, current);
 
   sprintf(current, "%s", config.save_debug_log ? "yes" : "no");
   MENU_REPLACE(SETTINGS_VIEW_SAVE_DEBUG_LOG, current);
