@@ -188,6 +188,7 @@ int ui_connect_loop(int id, void *context, const input_data *input) {
       display_error("Quitting failed: %d", ret);
       return 0;
 
+    // application launcher / resume
     default:
       vitapower_config(config);
       vitainput_config(config);
@@ -207,7 +208,7 @@ int ui_connect_loop(int id, void *context, const input_data *input) {
       }
 
 mainloop:
-      while (connection_get_status() == LI_CONNECTED) {
+      while (connection_is_connected()) {
         sceKernelDelayThread(500 * 1000);
       }
 
@@ -474,19 +475,27 @@ void ui_connect_paired_device(device_info_t *info) {
     display_error("Unpaired device\n%s", info->name);
     return;
   }
+
   char *addr = NULL;
-  if (info->internal && check_connection(info->name, info->internal)) {
+  if (info->prefer_external && info->external && check_connection(info->name, info->external)) {
+    addr = info->external;
+  } else if (info->internal && check_connection(info->name, info->internal)) {
     addr = info->internal;
   } else if (info->external && check_connection(info->name, info->external)) {
     addr = info->external;
   }
+  info->prefer_external = addr == info->external;
+  save_device_info(info);
+  
   if (addr == NULL) {
     display_error("Can't connect to server\n%s", info->name);
     return;
   }
+
   if (!ui_connect(info->name, addr)) {
     return;
   }
+
   while (ui_connected_menu() == QUIT_RELOAD);
 }
 

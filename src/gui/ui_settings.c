@@ -384,6 +384,7 @@ enum {
   SETTINGS_JP_LAYOUT,
   SETTINGS_SHOW_FPS,
   SETTINGS_ENABLE_FRAME_PACER,
+  SETTINGS_CENTER_REGION_ONLY,
   SETTINGS_ENABLE_MAPPING,
   SETTINGS_BACK_DEADZONE,
   SETTINGS_SPECIAL_KEYS,
@@ -402,6 +403,7 @@ enum {
   SETTINGS_VIEW_JP_LAYOUT,
   SETTINGS_VIEW_SHOW_FPS,
   SETTINGS_VIEW_ENABLE_FRAME_PACER,
+  SETTINGS_VIEW_CENTER_REGION_ONLY,
   SETTINGS_VIEW_ENABLE_MAPPING,
   SETTINGS_VIEW_BACK_DEADZONE,
   SETTINGS_VIEW_SPECIAL_KEYS,
@@ -410,6 +412,9 @@ enum {
 
 static int SETTINGS_VIEW_IDX[10];
 
+// _countof only works for variable allocated on the stack, not from malloc (sizeof(i) will be incorrect).
+#define _countof(i) (sizeof(i) / sizeof((i)[0]))
+#define _move_idx_in_array(a, f, i) move_idx_in_array((a), _countof(a), (f), (i))
 static int move_idx_in_array(char *array[], int count, char *find, int index_dist) {
   int i = 0;
   for (; i < count; i++) {
@@ -442,16 +447,17 @@ static int settings_loop(int id, void *context, const input_data *input) {
       if (!left && !right) {
           break;
       }
-      char *resolutions[] = {"960x540", "960x544", "1280x720", "1920x1080"};
+      char *resolutions[] = {"960x540", "960x544", "1280x540", "1280x720", "1920x1080"};
       sprintf(current, "%dx%d", config.stream.width, config.stream.height);
 
-      new_idx = move_idx_in_array(resolutions, 4, current, left ? -1 : +1);
+      new_idx = _move_idx_in_array(resolutions, current, left ? -1 : +1);
 
       switch (new_idx) {
         case 0: config.stream.width = 960; config.stream.height = 540; break;
         case 1: config.stream.width = 960; config.stream.height = 544; break;
-        case 2: config.stream.width = 1280; config.stream.height = 720; break;
-        case 3: config.stream.width = 1920; config.stream.height = 1080; break;
+        case 2: config.stream.width = 1280; config.stream.height = 540; break;
+        case 3: config.stream.width = 1280; config.stream.height = 720; break;
+        case 4: config.stream.width = 1920; config.stream.height = 1080; break;
       }
 
       did_change = 1;
@@ -462,7 +468,7 @@ static int settings_loop(int id, void *context, const input_data *input) {
       }
       char *settings[] = {"30", "60"};
       sprintf(current, "%d", config.stream.fps);
-      new_idx = move_idx_in_array(settings, 2, current, left ? -1 : +1);
+      new_idx = _move_idx_in_array(settings, current, left ? -1 : +1);
 
       switch (new_idx) {
         case 0: config.stream.fps = 30; break;
@@ -542,6 +548,13 @@ static int settings_loop(int id, void *context, const input_data *input) {
       }
       did_change = 1;
       config.enable_frame_pacer = !config.enable_frame_pacer;
+      break;
+    case SETTINGS_CENTER_REGION_ONLY:
+      if ((input->buttons & config.btn_confirm) == 0 || input->buttons & SCE_CTRL_HOLD) {
+        break;
+      }
+      did_change = 1;
+      config.center_region_only = !config.center_region_only;
       break;
     case SETTINGS_ENABLE_MAPPING:
       if ((input->buttons & config.btn_confirm) == 0 || input->buttons & SCE_CTRL_HOLD) {
@@ -628,6 +641,9 @@ static int settings_loop(int id, void *context, const input_data *input) {
 
   sprintf(current, "%s", config.enable_frame_pacer ? "yes" : "no");
   MENU_REPLACE(SETTINGS_VIEW_ENABLE_FRAME_PACER, current);
+
+  sprintf(current, "%s", config.center_region_only ? "yes" : "no");
+  MENU_REPLACE(SETTINGS_VIEW_CENTER_REGION_ONLY, current);
 
   sprintf(current, "%s", config.save_debug_log ? "yes" : "no");
   MENU_REPLACE(SETTINGS_VIEW_SAVE_DEBUG_LOG, current);
