@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_SYSTEM_NAME "Generic")
-set(CMAKE_C_COMPILER "arm-vita-eabi-gcc")
-set(CMAKE_CXX_COMPILER "arm-vita-eabi-g++")
+set(CMAKE_C_COMPILER "arm-dolce-eabi-gcc")
+set(CMAKE_CXX_COMPILER "arm-dolce-eabi-g++")
 
 project(moonlight)
-set(TITLE_ID "XYZZ00002")
-set(TITLE "Moonlight")
+set(TITLE_ID "XYZZ00003")
+set(TITLE "Moonlight2")
 set(VERSION_MAJOR "0")
 set(VERSION_MINOR "8")
 set(VERSION_PATCH "0")
@@ -147,16 +147,16 @@ target_link_libraries(${PROJECT_NAME}.elf
 )
 
 add_custom_target(${PROJECT_NAME}.velf ALL
-	COMMAND vita-elf-create ${PROJECT_NAME}.elf ${PROJECT_NAME}.velf
+	COMMAND dolce-elf-create ${PROJECT_NAME}.elf ${PROJECT_NAME}.velf
 )
 
 add_custom_target(param.sfo ALL
-	COMMAND vita-mksfoex -s TITLE_ID=${TITLE_ID} -s APP_VER=${APP_VER} "${TITLE}" param.sfo
+	COMMAND dolce-mksfoex -s TITLE_ID=${TITLE_ID} -s APP_VER=${APP_VER} "${TITLE}" param.sfo
 )
 
 add_custom_target(${PROJECT_NAME}.vpk ALL
-	COMMAND vita-make-fself -s -c ${PROJECT_NAME}.velf eboot.bin
-	COMMAND vita-pack-vpk -s param.sfo -b eboot.bin
+	COMMAND dolce-make-fself -s -c ${PROJECT_NAME}.velf eboot.bin
+	COMMAND dolce-pack-vpk -s param.sfo -b eboot.bin
 			--add ../sce_sys/icon0.png=sce_sys/icon0.png
 			--add ../sce_sys/livearea/contents/bg.png=sce_sys/livearea/contents/bg.png
 			--add ../sce_sys/livearea/contents/startup.png=sce_sys/livearea/contents/startup.png

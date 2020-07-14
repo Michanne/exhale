@@ -68,7 +68,7 @@ void utf8_to_utf16(const uint8_t *src, uint16_t *dst) {
   *dst = '\0';
 }
 
-void initImeDialog(SceImeType type, const char *title, char *initial_text, int max_text_length) {
+void initImeDialog(int type, const char *title, char *initial_text, int max_text_length) {
   // Convert UTF8 to UTF16
   utf8_to_utf16((const uint8_t *)title, ime_title_utf16);
   utf8_to_utf16((const uint8_t *)initial_text, ime_initial_text_utf16);
@@ -97,7 +97,7 @@ void oslOskGetText(char *text){
 }
 
 
-int ime_dialog_type(SceImeType type, char *text, const char *title, const char *def) {
+int ime_dialog_type(int type, char *text, const char *title, const char *def) {
   sceCommonDialogSetConfigParam(&(SceCommonDialogConfigParam){});
 
   char userText[512];
