@@ -15,7 +15,7 @@ If you need more help, join the #vita-help channel in [discord][4].
 
 # Build deps
 
-You can install build dependencies with [vdpm](https://github.com/vitasdk/vdpm).
+You can install build dependencies with [ddpm](https://github.com/dolcesdk/ddpm).
 
 # Build Moonlight
 

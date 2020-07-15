@@ -30,6 +30,7 @@
 
 typedef struct _SERVER_DATA {
   const char* address;
+  char* serverName;
   char* gpuType;
   bool paired;
   bool supports4K;

@@ -57,7 +57,8 @@ enum {
 #define INPUT_TYPE_DEF_NAME     0xf0000000
 
 enum {
-  INPUT_SPECIAL_KEY_PAUSE
+  INPUT_SPECIAL_KEY_PAUSE,
+  INPUT_SPECIAL_KEY_KB
 };
 
 bool vitainput_init();

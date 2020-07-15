@@ -25,6 +25,7 @@ static unsigned int settings_special_codes[] = {0,
   // special
   INPUT_TYPE_DEF_NAME | INPUT_TYPE_SPECIAL,
   INPUT_SPECIAL_KEY_PAUSE | INPUT_TYPE_SPECIAL,
+  INPUT_SPECIAL_KEY_KB | INPUT_TYPE_SPECIAL,
   // gamepad
   INPUT_TYPE_DEF_NAME | INPUT_TYPE_GAMEPAD,
   SPECIAL_FLAG | INPUT_TYPE_GAMEPAD,
@@ -51,6 +52,7 @@ static char *settings_special_names[] = {"None",
   // special
   "Special inputs",
   "Pause stream",
+  "On-screen Keyboard",
   // gamepad
   "Gamepad buttons",
   "Special (XBox button)",

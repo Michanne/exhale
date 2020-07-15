@@ -33,9 +33,15 @@
 #include <psp2/io/stat.h>
 #include <vita2d.h>
 
+struct {
+  int menu_top_index;
+  int menu_bottom_index;
+} applist;
+
 SERVER_DATA server;
 PAPP_LIST server_applist;
-int pos[2];
+
+int ui_reconnect();
 
 int get_app_id(PAPP_LIST list, char *name) {
   while (list != NULL) {
@@ -126,12 +132,15 @@ int ui_connect_loop(int id, void *context, const input_data *input) {
   int status = connection_get_status();
 
   if (status == LI_DISCONNECTED) {
+    if(!ui_reconnect())
       goto disconnect;
+    else
+      return QUIT_RELOAD;
   }
 
   menu_entry *menu = context;
-  for (int i = pos[0]; i < pos[1]; i += 1) {
-    menu[i].disabled = (server.currentGame != 0);
+  for (int i = applist.menu_top_index; i < applist.menu_bottom_index; i += 1) {
+    //menu[i].disabled = (server.currentGame != 0);
   }
 
   if ((input->buttons & config.btn_confirm) == 0 || input->buttons & SCE_CTRL_HOLD) {
@@ -202,8 +211,22 @@ int ui_connect_loop(int id, void *context, const input_data *input) {
           }
           // TODO: stop previous stream
         case LI_PAIRED:
-          flash_message("Stream starting...");
-          ui_connect_stream(id);
+          {
+            if(server.currentGame != 0 && server.currentGame != id)
+            {
+              flash_message("Quitting running application...");
+              ret = gs_quit_app(&server);
+              if (ret != GS_OK) {
+                display_error("Failed to exit running application: %d", ret);
+                return 0;
+              }
+            }
+
+            connection_paired();
+            sceKernelDelayThread(1000 * 1000);
+            flash_message("Stream starting...");
+            ui_connect_stream(id);
+          }
           break;
       }
 
@@ -215,7 +238,10 @@ mainloop:
       int status = connection_get_status();
 
       if (status == LI_DISCONNECTED) {
+        if(!ui_reconnect())
           goto disconnect;
+        else
+          return QUIT_RELOAD;
       }
 
       return QUIT_RELOAD;
@@ -252,9 +278,11 @@ int ui_connect(char *name, char *address) {
       display_error("Gamestream error: %s\n", gs_error);
       return 0;
     } else if (ret != GS_OK) {
-      display_error("Can't connect to server\n%s", address);
+      display_error("Can't connect to server\nIP: %s\nError: %s\nReturn Code: %s", address, gs_error, ret);
       return 0;
     }
+
+    server.serverName = name;
 
     connection_reset();
   }
@@ -349,7 +377,7 @@ int ui_connected_menu() {
     if (server_applist != NULL) {
       MENU_CATEGORY("Applications");
 
-      pos[0] = idx;
+      applist.menu_top_index = idx;
 
       PAPP_LIST list = server_applist;
       while (list) {
@@ -357,13 +385,38 @@ int ui_connected_menu() {
         list = list->next;
       }
 
-      pos[1] = idx;
+      applist.menu_bottom_index = idx;
     } else {
-      pos[0] = -1;
+      applist.menu_top_index = -1;
     }
   }
 
   return display_menu(menu, idx, NULL, &ui_connect_loop, NULL, NULL, &menu);
+}
+
+int ui_reconnect()
+{
+  int tries = 0;
+  int conn_stat = 0;
+  int ret = 1;
+
+  connection_terminate();
+
+  sceKernelDelayThread(1000 * 1000);
+    
+  do {
+    flash_message("Connection broken. Attempting to reestablish...\nAttempt %d", tries + 1);
+
+    if(ui_connect(server.serverName, server.serverInfo.address)) break;
+
+    sceKernelDelayThread(1000 * 1000);
+    ++tries;
+  } while(tries < 3);
+
+  if(connection_get_status() == LI_DISCONNECTED || connection_paired())
+    ret = 0;
+
+  return ret;
 }
 
 device_info_t* ui_connect_and_pairing(device_info_t *info) {

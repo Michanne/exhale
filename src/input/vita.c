@@ -33,6 +33,8 @@
 #include "../connection.h"
 #include "vita.h"
 #include "mapping.h"
+#include "../gui/ime.h"
+#include "../video/vita.h"
 
 #include <Limelight.h>
 
@@ -47,6 +49,7 @@
 
 #define WIDTH 960
 #define HEIGHT 544
+#define IME_TEXT_MAX_BUF 256
 
 struct mapping map = {0};
 
@@ -299,6 +302,36 @@ inline void special(uint32_t defined, uint32_t pressed, uint32_t old_pressed) {
         if (dev_val == INPUT_SPECIAL_KEY_PAUSE) {
           connection_minimize();
           return;
+        }
+        else if(dev_val == INPUT_SPECIAL_KEY_KB) {
+          char sendText[IME_TEXT_MAX_BUF] = {0};
+          vitavideo_stop();
+          if(ime_dialog_string(sendText, "Enter text:", "") == 0) {
+            for(int i = 0; i < strlen(sendText); ++i)
+            {
+              int c = sendText[i];
+              int modifier = 0;
+
+              if(c >= 65 && c <= 90)
+                modifier = 4;
+              if(c >= 97 && c <= 122)
+                c -= 32;
+
+              if (modifier != 0) {
+                LiSendKeyboardEvent(0x10, KEY_ACTION_DOWN, modifier);
+                sceKernelDelayThread(50 * 1000);
+              }
+
+              LiSendKeyboardEvent(c, KEY_ACTION_DOWN, modifier);
+              sceKernelDelayThread(50 * 1000);
+              LiSendKeyboardEvent(c, KEY_ACTION_UP, modifier);
+
+              if (modifier != 0) {
+                LiSendKeyboardEvent(0x10, KEY_ACTION_UP, modifier);
+              }
+            }
+          }
+          vitavideo_start();
         }
       case INPUT_TYPE_GAMEPAD:
         curr.button |= dev_val;
