@@ -15,15 +15,15 @@ jobs:
     - uses: actions/checkout@v2
     - name: git Actions
       uses: srt32/git-actions@v0.0.3
-    - name: get-cmake
-      uses: lukka/get-cmake@v3.17.3
-    - name: fetch
+      with:
+        args: git clone https://github.com/dolcesdk/ddpm && cd ddpm && ./bootstrap-dolcesdk.sh && ./install-all.sh
       env: 
         DOLCESDK: /usr/local/dolcesdk
         PATH: /usr/local/dolcesdk/bin:PATH
-      run: git clone https://github.com/dolcesdk/ddpm && cd ddpm && ./bootstrap-dolcesdk.sh && ./install-all.sh
-    - name: cmake
-      run: cmake
+    - name: get-cmake
+      uses: lukka/get-cmake@v3.17.3
+      with:
+        args: cmake
     - name: make
       run: mkdir build && cd build && make
     - name: make check
