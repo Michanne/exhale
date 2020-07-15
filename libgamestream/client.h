@@ -1,7 +1,7 @@
 /*
  * This file is part of Moonlight Embedded.
  *
- * Copyright (C) 2015, 2016 Iwan Timmer
+ * Copyright (C) 2015-2017 Iwan Timmer
  *
  * Moonlight is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,16 +30,20 @@
 
 typedef struct _SERVER_DATA {
   const char* address;
+  char* serverName;
   char* gpuType;
-  char* gfeVersion;
   bool paired;
   bool supports4K;
+  bool unsupported;
   int currentGame;
   int serverMajorVersion;
+  char* gsVersion;
+  PDISPLAY_MODE modes;
+  SERVER_INFORMATION serverInfo;
 } SERVER_DATA, *PSERVER_DATA;
 
-int gs_init(PSERVER_DATA server, const char *keyDirectory);
-int gs_start_app(PSERVER_DATA server, PSTREAM_CONFIGURATION config, int appId, bool sops, bool localaudio);
+int gs_init(PSERVER_DATA server, char* address, const char *keyDirectory, int logLevel, bool unsupported);
+int gs_start_app(PSERVER_DATA server, PSTREAM_CONFIGURATION config, int appId, bool sops, bool localaudio, int gamepad_mask);
 int gs_applist(PSERVER_DATA server, PAPP_LIST *app_list);
 int gs_unpair(PSERVER_DATA server);
 int gs_pair(PSERVER_DATA server, char* pin);

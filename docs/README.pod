@@ -75,11 +75,12 @@ Change the vertical resolution to I<HEIGHT>
 =item B<-30fps>
 
 Use 30 fps for streaming.
+This is the default configuration for 1080p and higher.
 
 =item B<-60fps>
 
 Use 60 fps for streaming.
-This is the default configuration.
+This is the default configuration for 720p.
 
 =item B<-fps> [I<FPS>]
 
@@ -130,6 +131,10 @@ By default the encryption keys are stored in $XDG_CACHE_DIR/moonlight or ~/.cach
 
 Use I<MAPPING> as the mapping file for all inputs specified after this B<-mapping>.
 If no B<-input> is specified after the B<-mapping> this mapping is used for autoloaded inputs.
+
+=item B<-debug>
+
+Enable verbose and debug output
 
 =item B<-input> [I<INPUT>]
 

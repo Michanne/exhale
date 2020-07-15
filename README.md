@@ -1,51 +1,36 @@
-# Moonlight Embedded
+# Vita Moonlight
 
-Moonlight Embedded is an open source implementation of NVIDIA's GameStream, as used by the NVIDIA Shield, but built for Linux.
-
-Moonlight Embedded allows you to stream your full collection of Steam games from
-your powerful Windows desktop to your (embedded) Linux system, like Raspberry Pi, CuBox-i and ODROID.
+This is a vita port of Moonlight Embedded.
+Moonlight is an open source implementation of NVIDIA GameStream.
 
 ## Documentation
 
-More information about installing and runnning Moonlight Embedded is available on the [wiki](https://github.com/irtimmer/moonlight-embedded/wiki).
+More information can find [moonlight-docs][1], [moonlight-embedded][2], and our [wiki][3].
+If you need more help, join the #vita-help channel in [discord][4].
 
-## Requirements
+[1]: https://github.com/moonlight-stream/moonlight-docs/wiki
+[2]: https://github.com/irtimmer/moonlight-embedded/wiki
+[3]: https://github.com/xyzz/vita-moonlight/wiki
+[4]: https://discord.gg/atkmxxT
 
-* [GFE compatible](http://shield.nvidia.com/play-pc-games/) computer with GTX 600/700/900 series GPU (for the PC you're streaming from)
-* High-end wireless router (802.11n dual-band recommended) or wired network
-* Geforce Experience 2.1.1 or higher
+# Build deps
 
-## Quick Start
+You can install build dependencies with [ddpm](https://github.com/dolcesdk/ddpm).
 
-* Ensure your GFE server and client are on the same network
-* Turn on Shield Streaming in the GFE settings
-* Pair Moonlight Embedded with the GFE server
-* Accept the pairing confirmation on your PC
-* Connect to the GFE Server with Moonlight Embedded
-* Play games!
+# Build Moonlight
 
-## Bugs
+```
+# if you do git pull, make sure submodules are updated first
+git submodule update --init
+mkdir build && cd build
+cmake ..
+make
+```
 
-Please check the fora, wiki and old bug reports before submitting a new bug report.
+# Assets
 
-Bugs can be reported to the [issue tracker](https://github.com/irtimmer/moonlight-embedded/issues).
+- Icon - [moonlight-stream][moonlight] project logo
+- Livearea background - [Moonlight Reflection][reflection] Public domain
 
-## See also
-
-[Moonlight-common-c](https://github.com/moonlight-stream/moonlight-common-c) is the shared codebase between
-different C implementations of Moonlight
-
-[Moonlight-common-c](https://github.com/irtimmer/moonlight-common-c) is the fork used by Moonlight Embedded
-
-## Discussion
-
-[XDA](http://forum.xda-developers.com/showthread.php?t=2505510) Moonlight in General  
-[Raspberry Pi Forum](http://www.raspberrypi.org/forums/viewtopic.php?f=78&t=65878) Moonlight Embedded for Raspberry Pi  
-[SolidRun Community](http://www.solid-run.com/community/viewtopic.php?f=13&t=1489&p=11173) Moonlight Embedded for Cubox-i and Hummingboard  
-[ODROID Forum](http://forum.odroid.com/viewtopic.php?f=91&t=15456) Moonlight Embedded on ODROID  
-
-## Contribute
-
-1. Fork us
-2. Write code
-3. Send Pull Requests
+[moonlight]: https://github.com/moonlight-stream
+[reflection]: http://www.publicdomainpictures.net/view-image.php?image=130014&picture=moonlight-reflection

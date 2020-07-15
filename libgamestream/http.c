@@ -20,13 +20,19 @@
 #include "http.h"
 #include "errors.h"
 
+#include <stdbool.h>
 #include <string.h>
 #include <curl/curl.h>
+
+#include <psp2/sysmodule.h>
+#include "../src/graphics.h"
 
 static CURL *curl;
 
 static const char *pCertFile = "./client.pem";
 static const char *pKeyFile = "./key.pem";
+
+static bool debug;
 
 static size_t _write_curl(void *contents, size_t size, size_t nmemb, void *userp)
 {
@@ -44,8 +50,9 @@ static size_t _write_curl(void *contents, size_t size, size_t nmemb, void *userp
   return realsize;
 }
 
-int http_init(const char* keyDirectory) {
+int http_init(const char* keyDirectory, int logLevel) {
   curl = curl_easy_init();
+  debug = logLevel >= 2;
   if (!curl)
     return GS_FAILED;
 
@@ -64,6 +71,12 @@ int http_init(const char* keyDirectory) {
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _write_curl);
   curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+  curl_easy_setopt(curl, CURLOPT_SSL_SESSIONID_CACHE, 0L);
+  curl_easy_setopt(curl, CURLOPT_MAXCONNECTS, 0L);
+  curl_easy_setopt(curl, CURLOPT_FRESH_CONNECT, 1L);
+  curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
+  curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5L);
+  curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 
   return GS_OK;
 }
@@ -71,6 +84,11 @@ int http_init(const char* keyDirectory) {
 int http_request(char* url, PHTTP_DATA data) {
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, data);
   curl_easy_setopt(curl, CURLOPT_URL, url);
+
+  char url_tiny[48] = {0};
+  strncpy(url_tiny, url, sizeof(url_tiny) - 1);
+  if (debug)
+    printf("GET %s\n", url_tiny);
 
   if (data->size > 0) {
     free(data->memory);
@@ -88,6 +106,9 @@ int http_request(char* url, PHTTP_DATA data) {
   } else if (data->memory == NULL) {
     return GS_OUT_OF_MEMORY;
   }
+
+  if (debug)
+    printf("Response:\n%s\n\n", data->memory);
   
   return GS_OK;
 }

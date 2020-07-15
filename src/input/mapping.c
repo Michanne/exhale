@@ -23,22 +23,22 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define write_config(fd, key, value) fprintf(fd, "%s = %hd\n", key, value)
+#define write_config(fd, key, value) fprintf(fd, "%s = %x\n", key, value)
 #define write_config_bool(fd, key, value) fprintf(fd, "%s = %s\n", key, value?"true":"false");
 
 void mapping_load(char* fileName, struct mapping* map) {
   FILE* fd = fopen(fileName, "r");
   if (fd == NULL) {
-    fprintf(stderr, "Can't open mapping file: %s\n", fileName);
-    exit(EXIT_FAILURE);
+    printf("Can't open mapping file: %s\n", fileName);
+    return;
   }
 
   char *line = NULL;
   size_t len = 0;
-  while (getline(&line, &len, fd) != -1) {
-    char *key = NULL, *value = NULL;
-    if (sscanf(line, "%ms = %ms", &key, &value) == 2) {
-      long int_value = strtol(value, NULL, 10);
+  while (__getline(&line, &len, fd) != -1) {
+    char key[256], value[256];
+    if (sscanf(line, "%s = %s", &key, &value) == 2) {
+      long int_value = strtol(value, NULL, 16);
       if (strcmp("abs_x", key) == 0)
         map->abs_x = int_value;
       else if (strcmp("abs_y", key) == 0)
@@ -106,13 +106,9 @@ void mapping_load(char* fileName, struct mapping* map) {
       else
         fprintf(stderr, "Can't map (%s)\n", key);
     }
-    if (key != NULL)
-      free(key);
-
-    if (value != NULL)
-      free(value);
   }
   free(line);
+  fclose(fd);
 }
 
 void mapping_save(char* fileName, struct mapping* map) {

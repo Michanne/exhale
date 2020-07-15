@@ -1,3 +1,12 @@
 [submodule "common"]
 	path = third_party/moonlight-common-c
-	url = https://github.com/irtimmer/moonlight-common-c.git
+	url = https://github.com/moonlight-stream/moonlight-common-c.git
+[submodule "third_party/enet"]
+	path = third_party/enet
+	url = https://github.com/cgutman/enet.git
+[submodule "third_party/inih"]
+	path = third_party/inih
+	url = https://github.com/benhoyt/inih
+[submodule "third_party/mdns"]
+	path = third_party/mdns
+	url = https://github.com/d3m3vilurr/mdns-vita

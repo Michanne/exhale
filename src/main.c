@@ -26,12 +26,8 @@
 #include "discover.h"
 #include "config.h"
 #include "platform.h"
-#include "sdl.h"
 
-#include "input/evdev.h"
-#include "input/udev.h"
-#include "input/cec.h"
-#include "input/sdlinput.h"
+#include "input/vita.h"
 
 #include <Limelight.h>
 
@@ -41,245 +37,95 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <arpa/inet.h>
 #include <openssl/rand.h>
+#include <openssl/evp.h>
+#include <ctype.h>
 
-static void applist(PSERVER_DATA server) {
-  PAPP_LIST list = NULL;
-  if (gs_applist(server, &list) != GS_OK) {
-    fprintf(stderr, "Can't get app list\n");
-    return;
-  }
+#include <psp2/kernel/rng.h>
+#include <psp2/kernel/threadmgr.h>
 
-  for (int i = 1;list != NULL;i++) {
-    printf("%d. %s\n", i, list->name);
-    list = list->next;
+#include <psp2/net/net.h>
+#include <psp2/net/netctl.h>
+
+#include <psp2/io/stat.h>
+
+#include <psp2/sysmodule.h>
+#include <psp2/ctrl.h>
+#include <psp2/touch.h>
+#include <psp2/rtc.h>
+
+#include "graphics.h"
+#include "device.h"
+#include "gui/ui.h"
+#include "power/vita.h"
+
+static void vita_init() {
+  // Seed OpenSSL with Sony-grade random number generator
+  char random_seed[0x40] = {0};
+  sceKernelGetRandomNumber(random_seed, sizeof(random_seed));
+  RAND_seed(random_seed, sizeof(random_seed));
+  OpenSSL_add_all_algorithms();
+
+  // This is only used for PIN codes, doesn't really matter
+  srand(time(NULL));
+
+  printf("Vita Moonlight %d.%d.%d (%s)\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, COMPILE_OPTIONS);
+
+  int ret = 0;
+
+  ret = sceSysmoduleLoadModule(SCE_SYSMODULE_NET);
+
+  size_t net_mem_sz = 100 * 1024;
+  SceNetInitParam net_param = {0};
+  net_param.memory = calloc(net_mem_sz, 1);
+  net_param.size = net_mem_sz;
+  ret = sceNetInit(&net_param);
+
+  ret = sceNetCtlInit();
+  // TODO(xyz): cURL breaks when socket FD is too big, very hacky workaround below!
+  int s = sceNetSocket("", SCE_NET_AF_INET, SCE_NET_SOCK_STREAM, 0);
+  sceNetSocketClose(s);
+  if (s >= 20) {
+    printf("Cycling sockets...\n");
+    int c = 0;
+    do {
+      c = sceNetSocket("", SCE_NET_AF_INET, SCE_NET_SOCK_STREAM, 0);
+      sceNetSocketClose(c);
+    } while (c >= 5);
   }
 }
 
-static int get_app_id(PSERVER_DATA server, const char *name) {
-  PAPP_LIST list = NULL;
-  if (gs_applist(server, &list) != GS_OK) {
-    fprintf(stderr, "Can't get app list\n");
-    return -1;
-  }
-
-  while (list != NULL) {
-    if (strcmp(list->name, name) == 0)
-      return list->id;
-
-    list = list->next;
-  }
-  return -1;
-}
-
-static void stream(PSERVER_DATA server, PCONFIGURATION config, enum platform system) {
-  int appId = get_app_id(server, config->app);
-  if (appId<0) {
-    fprintf(stderr, "Can't find app %s\n", config->app);
-    exit(-1);
-  }
-
-  int ret = gs_start_app(server, &config->stream, appId, config->sops, config->localaudio);
-  if (ret < 0) {
-    if (ret == GS_NOT_SUPPORTED_4K)
-      fprintf(stderr, "Server doesn't support 4K\n");
-    else
-      fprintf(stderr, "Errorcode starting app: %d\n", ret);
-    exit(-1);
-  }
-
-  int drFlags = 0;
-  if (config->fullscreen)
-    drFlags |= DISPLAY_FULLSCREEN;
-
-  if (config->forcehw)
-    drFlags |= FORCE_HARDWARE_ACCELERATION;
-
-  printf("Stream %d x %d, %d fps, %d kbps\n", config->stream.width, config->stream.height, config->stream.fps, config->stream.bitrate);
-  LiStartConnection(server->address, &config->stream, &connection_callbacks, platform_get_video(system), platform_get_audio(system), NULL, drFlags, server->serverMajorVersion);
-
-  if (IS_EMBEDDED(system)) {
-    evdev_start();
-    loop_main();
-    evdev_stop();
-  }
-  #ifdef HAVE_SDL
-  else if (system == SDL)
-    sdl_loop();
-  #endif
-
-  LiStopConnection();
-}
-
-static void help() {
-  printf("Usage: moonlight [action] (options) [host]\n");
-  printf("       moonlight [configfile]\n");
-  printf("\n Actions\n\n");
-  printf("\tmap\t\t\tCreate mapping file for gamepad\n");
-  printf("\tpair\t\t\tPair device with computer\n");
-  printf("\tunpair\t\t\tUnpair device with computer\n");
-  printf("\tstream\t\t\tStream computer to device\n");
-  printf("\tlist\t\t\tList available games and applications\n");
-  printf("\tquit\t\t\tQuit the application or game being streamed\n");
-  printf("\thelp\t\t\tShow this help\n");
-  printf("\n Global Options\n\n");
-  printf("\t-config <config>\tLoad configuration file\n");
-  printf("\t-save <config>\t\tSave configuration file\n");
-  printf("\n Streaming options\n\n");
-  printf("\t-720\t\t\tUse 1280x720 resolution [default]\n");
-  printf("\t-1080\t\t\tUse 1920x1080 resolution\n");
-  printf("\t-width <width>\t\tHorizontal resolution (default 1280)\n");
-  printf("\t-height <height>\tVertical resolution (default 720)\n");
-  printf("\t-30fps\t\t\tUse 30fps\n");
-  printf("\t-60fps\t\t\tUse 60fps [default]\n");
-  printf("\t-bitrate <bitrate>\tSpecify the bitrate in Kbps\n");
-  printf("\t-packetsize <size>\tSpecify the maximum packetsize in bytes\n");
-  printf("\t-forcehevc\t\tUse high efficiency video decoding (HEVC)\n");
-  printf("\t-remote\t\t\tEnable remote optimizations\n");
-  printf("\t-app <app>\t\tName of app to stream\n");
-  printf("\t-nosops\t\t\tDon't allow GFE to modify game settings\n");
-  printf("\t-localaudio\t\tPlay audio locally\n");
-  printf("\t-surround\t\tStream 5.1 surround sound (requires GFE 2.7)\n");
-  printf("\t-keydir <directory>\tLoad encryption keys from directory\n");
-  #ifdef HAVE_SDL
-  printf("\n Video options (SDL Only)\n\n");
-  printf("\t-windowed\t\tDisplay screen in a window\n");
-  #endif
-  #ifdef HAVE_EMBEDDED
-  printf("\n I/O options\n\n");
-  printf("\t-mapping <file>\t\tUse <file> as gamepad mapping configuration file (use before -input)\n");
-  printf("\t-input <device>\t\tUse <device> as input. Can be used multiple times\n");
-  printf("\t-audio <device>\t\tUse <device> as audio output device\n");
-  printf("\t-forcehw \t\tTry to use video hardware acceleration\n");
-  #endif
-  printf("\nUse Ctrl+Alt+Shift+Q to exit streaming session\n\n");
-  exit(0);
-}
-
-static void pair_check(PSERVER_DATA server) {
-  if (!server->paired) {
-    fprintf(stderr, "You must pair with the PC first\n");
-    exit(-1);
+void loop_forever(void) {
+  while (connection_is_ready()) {
+    sceKernelDelayThread(100 * 1000);
   }
 }
 
 int main(int argc, char* argv[]) {
-  printf("Moonlight Embedded %d.%d.%d (%s)\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, COMPILE_OPTIONS);
+  psvDebugScreenInit();
+  vita_init();
 
-  CONFIGURATION config;
+  if (!vitapower_init()) {
+    printf("Failed to init power!");
+    loop_forever();
+  }
+
+  if (!vitainput_init()) {
+    printf("Failed to init input!");
+    loop_forever();
+  }
+
+  sceIoMkdir("ux0:/data/moonlight", 0777);
+  config_path = "ux0:data/moonlight/moonlight.conf";
   config_parse(argc, argv, &config);
+  strcpy(config.key_dir, "ux0:data/moonlight/");
 
-  if (config.action == NULL || strcmp("help", config.action) == 0)
-    help();
-  
-  enum platform system = platform_check(config.platform);
-  if (system == 0) {
-    fprintf(stderr, "Platform '%s' not found\n", config.platform);
-    exit(-1);
-  }
-  config.stream.supportsHevc = config.stream.supportsHevc || platform_supports_hevc(system);
-  
-  if (strcmp("map", config.action) == 0) {
-    if (config.address == NULL) {
-      perror("No filename for mapping");
-      exit(-1);
-    }
-    udev_init(!inputAdded, config.mapping);
-    for (int i=0;i<config.inputsCount;i++)
-      evdev_create(config.inputs[i].path, config.inputs[i].mapping);
-    
-    evdev_map(config.address);
-    exit(0);
-  }
+  vitapower_config(config);
+  vitainput_config(config);
 
-  if (config.address == NULL) {
-    config.address = malloc(MAX_ADDRESS_SIZE);
-    if (config.address == NULL) {
-      perror("Not enough memory");
-      exit(-1);
-    }
-    config.address[0] = 0;
-    printf("Searching for server...\n");
-    gs_discover_server(config.address);
-    if (config.address[0] == 0) {
-      fprintf(stderr, "Autodiscovery failed. Specify an IP address next time.\n");
-      exit(-1);
-    }
-  }
-  
-  char host_config_file[128];
-  sprintf(host_config_file, "hosts/%s.conf", config.address);
-  if (access(host_config_file, R_OK) != -1)
-    config_file_parse(host_config_file, &config);
+  config.log_file = fopen("ux0:data/moonlight/moonlight.log", "w");
 
-  SERVER_DATA server;
-  server.address = config.address;
-  printf("Connect to %s...\n", server.address);
+  load_all_known_devices();
 
-  int ret;
-  if ((ret = gs_init(&server, config.key_dir)) == GS_OUT_OF_MEMORY) {
-    fprintf(stderr, "Not enough memory\n");
-    exit(-1);
-  } else if (ret == GS_INVALID) {
-    fprintf(stderr, "Invalid data received from server: %s\n", config.address, gs_error);
-    exit(-1);
-  } else if (ret == GS_UNSUPPORTED_VERSION) {
-    if (!config.unsupported_version) {
-      fprintf(stderr, "Unsupported version: %s\n", gs_error);
-      exit(-1);
-    }
-  } else if (ret != GS_OK) {
-    fprintf(stderr, "Can't connect to server %s\n", config.address);
-    exit(-1);
-  }
-
-  printf("NVIDIA %s, GFE %s (protocol version %d)\n", server.gpuType, server.gfeVersion, server.serverMajorVersion);
-
-  if (strcmp("list", config.action) == 0) {
-    pair_check(&server);
-    applist(&server);
-  } else if (strcmp("stream", config.action) == 0) {
-    pair_check(&server);
-    if (IS_EMBEDDED(system)) {
-      for (int i=0;i<config.inputsCount;i++) {
-        printf("Add input %s (mapping %s)...\n", config.inputs[i].path, config.inputs[i].mapping);
-        evdev_create(config.inputs[i].path, config.inputs[i].mapping);
-      }
-
-      udev_init(!inputAdded, config.mapping);
-      evdev_init();
-      #ifdef HAVE_LIBCEC
-      cec_init();
-      #endif /* HAVE_LIBCEC */
-    }
-    #ifdef HAVE_SDL
-    else if (system == SDL)
-      sdl_init(config.stream.width, config.stream.height, config.fullscreen);
-    #endif
-
-    stream(&server, &config, system);
-  } else if (strcmp("pair", config.action) == 0) {
-    char pin[5];
-    sprintf(pin, "%d%d%d%d", (int)random() % 10, (int)random() % 10, (int)random() % 10, (int)random() % 10);
-    printf("Please enter the following PIN on the target PC: %s\n", pin);
-    if (gs_pair(&server, &pin[0]) != GS_OK) {
-      fprintf(stderr, "Failed to pair to server: %s\n", gs_error);
-    } else {
-      printf("Succesfully paired\n");
-    }
-  } else if (strcmp("unpair", config.action) == 0) {
-    if (gs_unpair(&server) != GS_OK) {
-      fprintf(stderr, "Failed to unpair to server: %s\n", gs_error);
-    } else {
-      printf("Succesfully unpaired\n");
-    }
-  } else if (strcmp("quit", config.action) == 0) {
-    pair_check(&server);
-    gs_quit_app(&server);
-  } else
-    fprintf(stderr, "%s is not a valid action\n", config.action);
+  gui_loop();
 }

@@ -17,7 +17,6 @@
  * along with Moonlight; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "input/evdev.h"
 #include "config.h"
 #include "audio.h"
 
@@ -26,6 +25,11 @@
 #include <unistd.h>
 #include <string.h>
 #include <getopt.h>
+#include <ini.h>
+#include "graphics.h"
+#include "input/vita.h"
+
+#include <psp2/kernel/sysmem.h>
 
 #define MOONLIGHT_PATH "/moonlight"
 #define USER_PATHS "."
@@ -34,230 +38,104 @@
 
 #define write_config_string(fd, key, value) fprintf(fd, "%s = %s\n", key, value)
 #define write_config_int(fd, key, value) fprintf(fd, "%s = %d\n", key, value)
+#define write_config_hex(fd, key, value) fprintf(fd, "%s = %X\n", key, value)
 #define write_config_bool(fd, key, value) fprintf(fd, "%s = %s\n", key, value?"true":"false");
+#define write_config_section(fd, key) fprintf(fd, "\n[%s]\n", key)
+
+CONFIGURATION config;
+char *config_path;
 
 bool inputAdded = false;
 static bool mapped = true;
 const char* audio_device = NULL;
 
-static struct option long_options[] = {
-  {"720", no_argument, NULL, 'a'},
-  {"1080", no_argument, NULL, 'b'},
-  {"width", required_argument, NULL, 'c'},
-  {"height", required_argument, NULL, 'd'},
-  {"30fps", no_argument, NULL, 'e'},
-  {"60fps", no_argument, NULL, 'f'},
-  {"bitrate", required_argument, NULL, 'g'},
-  {"packetsize", required_argument, NULL, 'h'},
-  {"app", required_argument, NULL, 'i'},
-  {"input", required_argument, NULL, 'j'},
-  {"mapping", required_argument, NULL, 'k'},
-  {"nosops", no_argument, NULL, 'l'},
-  {"audio", required_argument, NULL, 'm'},
-  {"localaudio", no_argument, NULL, 'n'},
-  {"config", required_argument, NULL, 'o'},
-  {"platform", required_argument, 0, 'p'},
-  {"save", required_argument, NULL, 'q'},
-  {"keydir", required_argument, NULL, 'r'},
-  {"remote", no_argument, NULL, 's'},
-  {"windowed", no_argument, NULL, 't'},
-  {"surround", no_argument, NULL, 'u'},
-  {"fps", required_argument, NULL, 'v'},
-  {"forcehw", no_argument, NULL, 'w'},
-  {"forcehevc", no_argument, NULL, 'x'},
-  {"unsupported", no_argument, NULL, 'y'},
-  {0, 0, 0, 0},
-};
+static int ini_handle(void *out, const char *section, const char *name,
+                      const char *value) {
+#define HEX(v) strtol((v), NULL, 16)
+#define INT(v) atoi((v))
+#define BOOL(v) strcmp((v), "true") == 0
+#define STR(v) strdup((v))
 
-char* get_path(char* name, char* extra_data_dirs) {
-  const char *xdg_config_dir = getenv("XDG_CONFIG_DIR");
-  const char *home_dir = getenv("HOME");
-
-  if (access(name, R_OK) != -1) {
-      return name;
-  }
-
-  if (!extra_data_dirs)
-    extra_data_dirs = "/usr/share:/usr/local/share";
-  if (!xdg_config_dir)
-    xdg_config_dir = home_dir;
-
-  char *data_dirs = malloc(strlen(USER_PATHS) + 1 + strlen(xdg_config_dir) + 1 + strlen(home_dir) + 1 + strlen(DEFAULT_CONFIG_DIR) + 1 + strlen(extra_data_dirs) + 2);
-  sprintf(data_dirs, USER_PATHS ":%s:%s/" DEFAULT_CONFIG_DIR ":%s/", xdg_config_dir, home_dir, extra_data_dirs);
-
-  char *path = malloc(strlen(data_dirs)+strlen(MOONLIGHT_PATH)+strlen(name)+2);
-  if (path == NULL) {
-    fprintf(stderr, "Not enough memory\n");
-    exit(-1);
-  }
-
-  char* data_dir = data_dirs;
-  char* end;
-  do {
-    end = strstr(data_dir, ":");
-    int length = end != NULL?end - data_dir:strlen(data_dir);
-    memcpy(path, data_dir, length);
-    if (path[0] == '/')
-      sprintf(path+length, MOONLIGHT_PATH "/%s", name);
-    else
-      sprintf(path+length, "/%s", name);
-
-    if(access(path, R_OK) != -1) {
-      free(data_dirs);
-      return path;
+  PCONFIGURATION config = (PCONFIGURATION)out;
+  if (strcmp(section, "backtouchscreen_deadzone") == 0) {
+    if (strcmp(name, "top") == 0) {
+      config->back_deadzone.top = INT(value);
+    } else if (strcmp(name, "right") == 0) {
+      config->back_deadzone.right = INT(value);
+    } else if (strcmp(name, "bottom") == 0) {
+      config->back_deadzone.bottom = INT(value);
+    } else if (strcmp(name, "left") == 0) {
+      config->back_deadzone.left = INT(value);
     }
-
-    data_dir = end + 1;
-  } while (end != NULL);
-
-  free(data_dirs);
-  free(path);
-  return NULL;
-}
-
-static void parse_argument(int c, char* value, PCONFIGURATION config) {
-  switch (c) {
-  case 'a':
-    config->stream.width = 1280;
-    config->stream.height = 720;
-    break;
-  case 'b':
-    config->stream.width = 1920;
-    config->stream.height = 1080;
-    break;
-  case 'c':
-    config->stream.width = atoi(value);
-    break;
-  case 'd':
-    config->stream.height = atoi(value);
-    break;
-  case 'e':
-    config->stream.fps = 30;
-    break;
-  case 'f':
-    config->stream.fps = 60;
-    break;
-  case 'g':
-    config->stream.bitrate = atoi(value);
-    break;
-  case 'h':
-    config->stream.packetSize = atoi(value);
-    break;
-  case 'i':
-    config->app = value;
-    break;
-  case 'j':
-    if (config->inputsCount >= MAX_INPUTS) {
-      perror("Too many inputs specified");
-      exit(-1);
+  } else if (strcmp(section, "special_keys") == 0) {
+    if (strcmp(name, "nw") == 0) {
+      config->special_keys.nw = HEX(value);
+    } else if (strcmp(name, "ne") == 0) {
+      config->special_keys.ne = HEX(value);
+    } else if (strcmp(name, "sw") == 0) {
+      config->special_keys.sw = HEX(value);
+    } else if (strcmp(name, "se") == 0) {
+      config->special_keys.se = HEX(value);
+    } else if (strcmp(name, "offset") == 0) {
+      config->special_keys.offset = INT(value);
+    } else if (strcmp(name, "size") == 0) {
+      config->special_keys.size = INT(value);
     }
-    config->inputs[config->inputsCount].path = value;
-    config->inputs[config->inputsCount].mapping = config->mapping;
-    config->inputsCount++;
-    inputAdded = true;
-    mapped = true;
-    break;
-  case 'k':
-    config->mapping = get_path(value, getenv("XDG_DATA_DIRS"));
-    if (config->mapping == NULL) {
-      fprintf(stderr, "Unable to open custom mapping file: %s\n", value);
-      exit(-1);
-    }
-    mapped = false;
-    break;
-  case 'l':
-    config->sops = false;
-    break;
-  case 'm':
-    audio_device = value;
-    break;
-  case 'n':
-    config->localaudio = true;
-    break;
-  case 'o':
-    if (!config_file_parse(value, config))
-      exit(EXIT_FAILURE);
-
-    break;
-  case 'p':
-    config->platform = value;
-    break;
-  case 'q':
-    config->config_file = value;
-    break;
-  case 'r':
-    strcpy(config->key_dir, value);
-    break;
-  case 's':
-    config->stream.streamingRemotely = 1;
-    break;
-  case 't':
-    config->fullscreen = false;
-    break;
-  case 'u':
-    config->stream.audioConfiguration = AUDIO_CONFIGURATION_51_SURROUND;
-    break;
-  case 'v':
-    config->stream.fps = atoi(value);
-    break;
-  case 'w':
-    config->forcehw = true;
-    break;
-  case 'x':
-    config->stream.supportsHevc = true;
-    break;
-  case 'y':
-    config->unsupported_version = true;
-    break;
-  case 1:
-    if (config->action == NULL)
-      config->action = value;
-    else if (config->address == NULL)
-      config->address = value;
-    else {
-      perror("Too many options");
-      exit(-1);
+  } else {
+    if (strcmp(name, "address") == 0) {
+      config->address = STR(value);
+    } else if (strcmp(name, "width") == 0) {
+      config->stream.width = INT(value);
+    } else if (strcmp(name, "height") == 0) {
+      config->stream.height = INT(value);
+    } else if (strcmp(name, "fps") == 0) {
+      config->stream.fps = INT(value);
+    } else if (strcmp(name, "bitrate") == 0) {
+      config->stream.bitrate = INT(value);
+    } else if (strcmp(name, "sops") == 0) {
+      config->sops = BOOL(value);
+    } else if (strcmp(name, "localaudio") == 0) {
+      config->localaudio = BOOL(value);
+    } else if (strcmp(name, "enable_frame_pacer") == 0) {
+      config->enable_frame_pacer = BOOL(value);
+    } else if (strcmp(name, "center_region_only") == 0) {
+      config->center_region_only = BOOL(value);
+    } else if (strcmp(name, "disable_powersave") == 0) {
+      config->disable_powersave = BOOL(value);
+    } else if (strcmp(name, "jp_layout") == 0) {
+      config->jp_layout = BOOL(value);
+    } else if (strcmp(name, "show_fps") == 0) {
+      config->show_fps = BOOL(value);
+    } else if (strcmp(name, "save_debug_log") == 0) {
+      config->save_debug_log = BOOL(value);
+    } else if (strcmp(name, "mapping") == 0) {
+      config->mapping = STR(value);
+    } else if (strcmp(name, "mouse_acceleration") == 0) {
+      config->mouse_acceleration = INT(value);
+    } else if (strcmp(name, "enable_ref_frame_invalidation") == 0) {
+      config->enable_ref_frame_invalidation = BOOL(value);
+    } else if (strcmp(name, "enable_remote_stream_optimization") == 0) {
+      config->stream.streamingRemotely = INT(value);
     }
   }
 }
 
 bool config_file_parse(char* filename, PCONFIGURATION config) {
-  FILE* fd = fopen(filename, "r");
-  if (fd == NULL) {
-    fprintf(stderr, "Can't open configuration file: %s\n", filename);
-    return false;
-  }
-
-  char *line = NULL;
-  size_t len = 0;
-
-  while (getline(&line, &len, fd) != -1) {
-    char *key = NULL, *value = NULL;
-    if (sscanf(line, "%ms = %m[^\n]", &key, &value) == 2) {
-      if (strcmp(key, "address") == 0) {
-        config->address = value;
-      } else if (strcmp(key, "sops") == 0) {
-        config->sops = strcmp("true", value) == 0;
-      } else if (strcmp(key, "localaudio") == 0) {
-        config->localaudio = strcmp("true", value) == 0;
-      } else {
-        for (int i=0;long_options[i].name != NULL;i++) {
-          if (long_options[i].has_arg == required_argument && strcmp(long_options[i].name, key) == 0) {
-            parse_argument(long_options[i].val, value, config);
-          }
-        }
-      }
-    }
-  }
-  return true;
+  return ini_parse(filename, ini_handle, config);
 }
 
-void config_save(char* filename, PCONFIGURATION config) {
+void config_save(const char* filename, PCONFIGURATION config) {
   FILE* fd = fopen(filename, "w");
   if (fd == NULL) {
     fprintf(stderr, "Can't open configuration file: %s\n", filename);
     exit(EXIT_FAILURE);
   }
+
+  if (config->address)
+    write_config_string(fd, "address", config->address);
+
+  if (config->mapping)
+    write_config_string(fd, "mapping", config->mapping);
 
   if (config->stream.width != 1280)
     write_config_int(fd, "width", config->stream.width);
@@ -277,7 +155,43 @@ void config_save(char* filename, PCONFIGURATION config) {
   if (strcmp(config->app, "Steam") != 0)
     write_config_string(fd, "app", config->app);
 
+  write_config_bool(fd, "enable_frame_pacer", config->enable_frame_pacer);
+  write_config_bool(fd, "center_region_only", config->center_region_only);
+  write_config_bool(fd, "disable_powersave", config->disable_powersave);
+  write_config_bool(fd, "jp_layout", config->jp_layout);
+  write_config_bool(fd, "show_fps", config->show_fps);
+  write_config_bool(fd, "save_debug_log", config->save_debug_log);
+
+  write_config_int(fd, "mouse_acceleration", config->mouse_acceleration);
+  write_config_bool(fd, "enable_ref_frame_invalidation", config->enable_ref_frame_invalidation);
+  write_config_int(fd, "enable_remote_stream_optimization", config->stream.streamingRemotely);
+
+  write_config_section(fd, "backtouchscreen_deadzone");
+  write_config_int(fd, "top",     config->back_deadzone.top);
+  write_config_int(fd, "right",   config->back_deadzone.right);
+  write_config_int(fd, "bottom",  config->back_deadzone.bottom);
+  write_config_int(fd, "left",    config->back_deadzone.left);
+
+  write_config_section(fd, "special_keys");
+  write_config_hex(fd, "nw",      config->special_keys.nw);
+  write_config_hex(fd, "ne",      config->special_keys.ne);
+  write_config_hex(fd, "sw",      config->special_keys.sw);
+  write_config_hex(fd, "se",      config->special_keys.se);
+  write_config_int(fd, "offset",  config->special_keys.offset);
+  write_config_int(fd, "size",    config->special_keys.size);
+
   fclose(fd);
+}
+
+void update_layout() {
+  if (config.jp_layout) {
+    config.btn_confirm = SCE_CTRL_CIRCLE;
+    config.btn_cancel = SCE_CTRL_CROSS;
+  }
+  else {
+    config.btn_confirm = SCE_CTRL_CROSS;
+    config.btn_cancel = SCE_CTRL_CIRCLE;
+  }
 }
 
 void config_parse(int argc, char* argv[], PCONFIGURATION config) {
@@ -292,7 +206,8 @@ void config_parse(int argc, char* argv[], PCONFIGURATION config) {
   config->stream.audioConfiguration = AUDIO_CONFIGURATION_STEREO;
   config->stream.supportsHevc = false;
 
-  config->platform = "default";
+  config->platform = "vita";
+  config->model = sceKernelGetModelForCDialog();
   config->app = "Steam";
   config->action = NULL;
   config->address = NULL;
@@ -301,27 +216,32 @@ void config_parse(int argc, char* argv[], PCONFIGURATION config) {
   config->localaudio = false;
   config->fullscreen = true;
   config->unsupported_version = false;
+  config->save_debug_log = false;
+  config->disable_powersave = true;
+  config->jp_layout = false;
+  config->show_fps = false;
+  config->enable_frame_pacer = true;
+  config->center_region_only = false;
+
+  config->special_keys.nw = INPUT_SPECIAL_KEY_PAUSE | INPUT_TYPE_SPECIAL;
+  config->special_keys.sw = SPECIAL_FLAG | INPUT_TYPE_GAMEPAD;
+  config->special_keys.offset = 0;
+  config->special_keys.size = 150;
+
+  config->mouse_acceleration = 150;
+  config->enable_ref_frame_invalidation = false;
 
   config->inputsCount = 0;
-  config->mapping = get_path("mappings/default.conf", getenv("XDG_DATA_DIRS"));
+  config->mapping = NULL;
   config->key_dir[0] = 0;
 
-  char* config_file = get_path("moonlight.conf", "/etc");
-  if (config_file)
+  //char* config_file = get_path("moonlight.conf", "ux0:data/moonlight/");
+  char* config_file = config_path;
+  if (config_file) {
     config_file_parse(config_file, config);
-  
-  if (argc == 2 && access(argv[1], F_OK) == 0) {
-    config->action = "stream";
-    if (!config_file_parse(argv[1], config))
-      exit(EXIT_FAILURE);
-
-  } else {
-    int option_index = 0;
-    int c;
-    while ((c = getopt_long_only(argc, argv, "-abc:d:efg:h:i:j:k:lm:no:p:q:r:stuv:w:xy", long_options, &option_index)) != -1) {
-      parse_argument(c, optarg, config);
-    }
   }
+
+  update_layout();
 
   if (config->config_file != NULL)
     config_save(config->config_file, config);
@@ -335,6 +255,9 @@ void config_parse(int argc, char* argv[], PCONFIGURATION config) {
       sprintf(config->key_dir, "%s" DEFAULT_CACHE_DIR MOONLIGHT_PATH, home_dir);
     }
   }
+
+  if (config->stream.fps == -1)
+    config->stream.fps = config->stream.height >= 1080 ? 30 : 60;
 
   if (config->stream.bitrate == -1) {
     if (config->stream.height >= 1080 && config->stream.fps >= 60)

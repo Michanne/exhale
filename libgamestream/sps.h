@@ -20,7 +20,7 @@
 #include <Limelight.h>
 
 #define GS_SPS_BITSTREAM_FIXUP 0x01
-#define GS_SPS_BASELINE_HACK 0x02
 
-void gs_sps_init();
-PLENTRY gs_sps_fix(PLENTRY *entry, int flags);
+void gs_sps_init(int width, int height);
+void gs_sps_stop();
+void gs_sps_fix(PLENTRY sps, int flags, uint8_t* out_buf, uint32_t* out_offset);

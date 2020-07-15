@@ -19,7 +19,11 @@
 
 #include <Limelight.h>
 
+#include <stdio.h>
+#include <stdint.h>
 #include <stdbool.h>
+
+#include <psp2/ctrl.h> 
 
 #define MAX_INPUTS 6
 
@@ -28,13 +32,24 @@ struct input_config {
   char* mapping;
 };
 
+struct touchscreen_deadzone {
+  int top, bottom, left, right;
+};
+
+struct special_keys {
+  int size, offset;
+  unsigned int nw, ne, sw, se;
+};
+
 typedef struct _CONFIGURATION {
+  // static configuration, value will be saved to config file
   STREAM_CONFIGURATION stream;
   char* app;
   char* action;
   char* address;
   char* mapping;
   char* platform;
+  uint32_t model;
   char* config_file;
   char key_dir[4096];
   bool sops;
@@ -42,11 +57,30 @@ typedef struct _CONFIGURATION {
   bool fullscreen;
   bool forcehw;
   bool unsupported_version;
+  struct touchscreen_deadzone back_deadzone;
+  struct special_keys special_keys;
+  bool disable_powersave;
+  bool jp_layout;
+  bool show_fps;
+  bool enable_frame_pacer;
+  bool center_region_only;
+  bool save_debug_log;
   struct input_config inputs[MAX_INPUTS];
   int inputsCount;
+  int mouse_acceleration;
+  bool enable_ref_frame_invalidation;
+  FILE *log_file;
+  // runtime configuration, value will be recreated at launch
+  SceCtrlButtons btn_confirm;
+  SceCtrlButtons btn_cancel;
 } CONFIGURATION, *PCONFIGURATION;
+
+extern CONFIGURATION config;
+extern char *config_path;
 
 bool inputAdded;
 
 bool config_file_parse(char* filename, PCONFIGURATION config);
 void config_parse(int argc, char* argv[], PCONFIGURATION config);
+void config_save(const char* filename, PCONFIGURATION config);
+void update_layout();

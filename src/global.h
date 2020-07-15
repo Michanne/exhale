@@ -19,6 +19,6 @@
 
 #include <pthread.h>
 
-extern pthread_t main_thread_id;
+// extern pthread_t main_thread_id;
 
 void quit();

@@ -22,11 +22,11 @@
 #include "global.h"
 
 #include <sys/stat.h>
-#include <sys/signalfd.h>
+// #include <sys/signalfd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <poll.h>
+// #include <poll.h>
 #include <signal.h>
 #include <string.h>
 
@@ -37,6 +37,7 @@ static int numFds = 0;
 static int sigFd;
 
 static int loop_sig_handler(int fd) {
+  #if 0
   struct signalfd_siginfo info;
   read(fd, &info, sizeof(info));
   switch (info.ssi_signo) {
@@ -47,9 +48,11 @@ static int loop_sig_handler(int fd) {
       return LOOP_RETURN;
   }
   return LOOP_OK;
+  #endif
 }
 
 void loop_add_fd(int fd, FdHandler handler, int events) {
+  #if 0
   int fdindex = numFds;
   numFds++;
 
@@ -69,25 +72,30 @@ void loop_add_fd(int fd, FdHandler handler, int events) {
   fds[fdindex].fd = fd;
   fds[fdindex].events = events;
   fdHandlers[fdindex] = handler;
+  #endif
 }
 
 void loop_remove_fd(int fd) {
+  #if 0
   numFds--;
   int fdindex;
   
   for (int i=0;i<numFds;i++) {
-    if (fds[i].fd = fd)
+    if (fds[i].fd == fd) {
       fdindex = i;
       break;
+    }
   }
   
   if (fdindex != numFds && numFds > 0) {
     memcpy(&fds[fdindex], &fds[numFds], sizeof(struct pollfd));
-    memcpy(&fdHandlers[fdindex], &fdHandlers[numFds], sizeof(FdHandler*));
+    memcpy(&fdHandlers[fdindex], &fdHandlers[numFds], sizeof(FdHandler));
   }
+  #endif
 }
 
 void loop_main() {
+  #if 0
   main_thread_id = pthread_self();
   sigset_t sigset;
   sigemptyset(&sigset);
@@ -110,4 +118,5 @@ void loop_main() {
       }
     }
   }
+  #endif
 }

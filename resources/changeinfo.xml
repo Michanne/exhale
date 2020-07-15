@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<changeinfo>
+<changes app_ver="00.08"><![CDATA[
+## 0.8.0<br>
+* Add new option for swapping O/X buttons (#168)<br>
+* Add new option for drawing FPS value (#167)<br>
+* Fix `RTSP message too long` (#164, fbe3d06)<br>
+]]></changes>
+<changes app_ver="00.07"><![CDATA[
+## 0.7.0<br>
+* Support 960x540 resolution (#162, fc7e19c)<br>
+* Support GFE 3.20 (97a6a0b)<br>
+]]></changes>
+<changes app_ver="00.06"><![CDATA[
+## 0.6.1<br>
+* Fix the stream delay issue (f791b3d); thanks @AlC4pwn to confirm fixing the bug<br>
+<br>
+## 0.6.0<br>
+* Update latest moonlight-common-c (cfadd84, ffe8c15)<br>
+* Update latest inih (a2e38bb)<br>
+* Fix invalid variable initializations<br>
+* Apply SPS changes of moonlight-embedded<br>
+* Use nerdfont instead VITA system font (7e2b682)<br>
+* Use vita2d instead direct framebuffer handling (70330e2)<br>
+* Implement poor network indicator (749aaaf)<br>
+]]></changes>
+<changes app_ver="00.05"><![CDATA[
+## 0.5.0<br>
+* Support to discover stream server via mDNS (#143)<br>
+* Implement frame pacer (#147)<br>
+* Update latest enet & moonlight-common-c (904a5d1, 7f63f0d)<br>
+]]></changes>
+<changes app_ver="00.04"><![CDATA[
+## 0.4.1<br>
+* Update latest moonlight-common-c (2c9d61c)<br>
+<br>
+## 0.4.0<br>
+* Sort app list alphabetically (#127)<br>
+* Improve special button settings (#130)<br>
+* Implement video cleanup for fixing connection issue (#131)<br>
+]]></changes>
+<changes app_ver="00.03"><![CDATA[
+## 0.3.3<br>
+* Update latest moonlight-common-c (8e77710)<br>
+* Cherry pick upstream change about gamepad masking (933d700)<br>
+* Reduce mismatch between upstream (e2d7910, e3cad393)<br>
+<br>
+## 0.3.2<br>
+* New configure option about streaming optimization (d2c974a)<br>
+* Fix cannot use 960x544 resolution (653afa6)<br>
+<br>
+## 0.3.1<br>
+* Fix cannot connect with new devices (b838278)<br>
+<br>
+## 0.3.0<br>
+* Support GFE 3.11<br>
+* New configure option about reference frame invalidation (#89, #91)<br>
+* Fix unset resolution configure (#90)<br>
+]]></changes>
+<changes app_ver="00.02"><![CDATA[
+## 0.2.0<br>
+* Support newer vitasdk (94988ab)<br>
+* Support forward error correction (f8631b5, 184bdbe)<br>
+* No more build uncompress binary (6fd22e7)<br>
+]]></changes>
+<changes app_ver="00.01"><![CDATA[
+## 0.1.2<br>
+* Compress binary (#75)<br>
+* Support GFE 3.2 (#76)<br>
+<br>
+## 0.1.1<br>
+* Fix connection problem on the GFE 2.2.3 (#66)<br>
+* Improve logging datas (#67, #68)<br>
+* Support newer vitasdk (#70)<br>
+<br>
+## 0.1.0<br>
+* Add new option for store debugging log (#53)<br>
+* Fix crash at quit application (#54)<br>
+* Add livearea (#62)<br>
+* Add new option for mouse acceleration (#63)<br>
+* Cleanup codes. (#60)<br>
+* Now remove alpha mark. but still lower version :) (#64)<br>
+]]></changes>
+<changes app_ver="00.00"><![CDATA[
+## alpha6<br>
+* Reimplement input & config process for the improve stability (#47)<br>
+* Fix little memory leaks (#47)<br>
+* Fix crash if have too many moonlight supporting games (#47)<br>
+* Fix crash at press circle button on the connect menu (#47)<br>
+* Fix bug about not detect device model (#50)<br>
+* Fix cannot use analog sticks on the VITA 2000 (#50)<br>
+* Change priority of input thread for the high bitrate connection (#50)<br>
+* Update mapping values & add new mapping file for the PSTV (#51)<br>
+<br>
+## alpha5<br>
+* Fix crash at first time (dcd1dc8)<br>
+* Improve input packet handle (#24)<br>
+* Change connection option (#26)<br>
+* Code cleanup for input handling (#27, #30, #31)<br>
+* Support L2/R2/L3/R3 Buttons on PSTV (#36)<br>
+* Update build toolchains & Fix connection problems under GFE 3.0 (#39)<br>
+<br>
+## alpha4<br>
+* Support GUI (#13)<br>
+* Support editing config file (#4)<br>
+* Support input mapping (#5)<br>
+* Add new config options for power saving (#6)<br>
+* Turn safe application (#7)<br>
+<br>
+## alpha3<br>
+* Support virtual button for L2/R2/L3/R3 using touchscreen (#1, #2)<br>
+* Support mouse move and click using touchscreen (#3)<br>
+<br>
+## alpha2<br>
+* Support custom settings; screen resolution, framerate and bitrate (d145403)<br>
+<br>
+## alpha1<br>
+* Initial release (04a7c1d)]]></changes>
+</changeinfo>

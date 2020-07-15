@@ -17,11 +17,11 @@
  * along with Moonlight; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <signal.h>
-#include <pthread.h>
+#include "config.h"
+#include "debug.h"
 
-pthread_t main_thread_id;
+// pthread_t main_thread_id;
 
 void quit() {
-  pthread_kill(main_thread_id, SIGTERM);
+  // pthread_kill(main_thread_id, SIGTERM);
 }
