@@ -18,7 +18,7 @@ If you need more help, join the #vita-help channel in [discord][4].
 
 You can install build dependencies with [ddpm](https://github.com/dolcesdk/ddpm).
 
-# Build Moonlight
+# Build Exhale
 
 ```
 # if you do git pull, make sure submodules are updated first
