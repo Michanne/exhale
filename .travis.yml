@@ -1,0 +1,17 @@
+language: c
+
+install: 
+  - apt-get install -y -qq make git-core cmake python patch
+  - export DOLCESDK=/usr/local/dolcesdk
+  - export PATH=$DOLCESDK/bin:$PATH
+  - git clone https://github.com/dolcesdk/ddpm
+  - cd ddpm
+  - ./bootstrap-dolcesdk.sh
+  - ./install-all.sh
+  - cd ..
+
+make:
+  - mkdir build
+  - cd build
+  - cmake ../
+  - make
