@@ -1,11 +1,11 @@
-# Vita Moonlight
+# Exhale
 
-This is a vita port of Moonlight Embedded.
-Moonlight is an open source implementation of NVIDIA GameStream.
+Originally a fork of the [vita port][3] of [Moonlight Embedded][1], Exhale is a streaming frontend/manager for Vita.
+It supports Steam and various PC emulators natively
 
 ## Documentation
 
-More information can find [moonlight-docs][1], [moonlight-embedded][2], and our [wiki][3].
+More information can find [moonlight-docs][1], [moonlight-embedded][2], and [vita-moonlight][3].
 If you need more help, join the #vita-help channel in [discord][4].
 
 [1]: https://github.com/moonlight-stream/moonlight-docs/wiki
