@@ -1,4 +1,5 @@
-# Exhale
+# Exhale 
+[![Build Status](https://travis-ci.org/Michanne/exhale.svg?branch=master)](https://travis-ci.org/Michanne/exhale)
 
 Originally a fork of the [vita port][3] of [Moonlight Embedded][1], Exhale is a streaming frontend/manager for Vita.
 It supports Steam and various PC emulators natively
