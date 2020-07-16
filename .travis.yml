@@ -1,13 +1,19 @@
 language: c
-
-install: 
-  - sudo apt-get install -y -qq make git-core cmake python patch
-  - export DOLCESDK=/usr/local/dolcesdk
-  - export PATH=$DOLCESDK/bin:$PATH
-  - git clone https://github.com/dolcesdk/ddpm
-  - cd ddpm
-  - ./bootstrap-dolcesdk.sh
-  - ./install-all.sh
-  - cd ..
-
+install:
+- sudo apt-get install -y -qq make git-core cmake python patch
+- export DOLCESDK=/usr/local/dolcesdk
+- export PATH=$DOLCESDK/bin:$PATH
+- git clone https://github.com/dolcesdk/ddpm
+- cd ddpm
+- "./bootstrap-dolcesdk.sh"
+- "./install-all.sh"
+- cd ..
 script: mkdir build && cd build && cmake ../ && make
+deploy:
+  provider: releases
+  api_key:
+    secure: ZlqVtuNdyeCcaa2t+Z2kyENN69mE8GEL88ZpPHs0f+a9VoZcKP6eEAfLDWNMRWFoxc4TpSfr9eUbQ/jSKHk1TmtJ+nL/gDDmekuKNkMPIhdYwz6vHvj9HLxt9zNYMUmWm/qnoIMFXCUrVntk2Pu2ADAO5u2jUNO/27NkuZGst1bPappG+8bUuKMZk8BH7DbAp1TuPdDe7iZ2viXoL9m60dVkpIxz+h9E6MoTTUL9l7X8EZloc5ssxwYohIyhbSUkx1Nino8yGGT3Wud9QXCWvQVMYyGLektSDb2gCpxl2RjXbp7uEsKOpIqYKdtbdTSOzM+vtU31hIO6ariEAfw4UeeFs8OFiFDuIoFEAWP+ymTD1Nobwhtx06YAAV6/9dp2rTheFAhSQZpyEJaY65gfrxqCUkW5mkvbZp/2sNk9Z7mZ/qU5E2q3RE0RjoONwHi9bb2lnrddl08LCrJwttSxHhvO1hzgtc/Wrsl/iCuvimB9u6xWC6LiLRA4u3mQv0Xn/sHTbM2nqzvBNo7qIM3EiflYm8xWQMfm1v7tf/mlpZ4Ybjbc/ZmxE0bxbm7HSjS7/LQ4OEXWaHy6cuLlwo3K5qdfMVyilXMLAEiJzMuPlzx698IwPPHAW+zq+fLwKZtcCU0lN15eX4u4nK/EzfBzngh7VKuoftr9w68+fPs+VYA=
+  file: build/moonlight.vpk
+  on:
+    repo: Michanne/exhale
+  skip_cleanup: 'true'
