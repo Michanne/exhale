@@ -24,15 +24,10 @@
 #include <opus/opus_multistream.h>
 #include <psp2/audioout.h>
 
-enum {
-  VITA_AUDIO_INIT_OK        = 0,
-  VITA_AUDIO_ERROR_BAD_OPUS = 0x80020001,
-  VITA_AUDIO_ERROR_PORT     = 0x80020002,
-};
-
 #define FRAME_SIZE 240
 #define VITA_SAMPLES 960
 #define BUFFER_SIZE (2 * VITA_SAMPLES)
+
 static int decode_offset;
 static int port;
 
@@ -40,6 +35,12 @@ static int active_audio_thread = true;
 static OpusMSDecoder* decoder = NULL;
 
 static short buffer[BUFFER_SIZE];
+
+enum {
+  VITA_AUDIO_INIT_OK        = 0,
+  VITA_AUDIO_ERROR_BAD_OPUS = 0x80020001,
+  VITA_AUDIO_ERROR_PORT     = 0x80020002,
+};
 
 static void vita_renderer_cleanup() {
   if (decoder != NULL) {

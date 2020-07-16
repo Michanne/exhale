@@ -4,11 +4,11 @@ set(CMAKE_SYSTEM_NAME "Generic")
 set(CMAKE_C_COMPILER "arm-dolce-eabi-gcc")
 set(CMAKE_CXX_COMPILER "arm-dolce-eabi-g++")
 
-project(moonlight)
-set(TITLE_ID "XYZZ00003")
-set(TITLE "Moonlight2")
+project(exhale)
+set(TITLE_ID "LAFA00001")
+set(TITLE "Exhale")
 set(VERSION_MAJOR "0")
-set(VERSION_MINOR "8")
+set(VERSION_MINOR "1")
 set(VERSION_PATCH "0")
 
 execute_process(COMMAND
@@ -158,6 +158,7 @@ add_custom_target(${PROJECT_NAME}.vpk ALL
 	COMMAND dolce-make-fself -s -c ${PROJECT_NAME}.velf eboot.bin
 	COMMAND dolce-pack-vpk -s param.sfo -b eboot.bin
 			--add ../sce_sys/icon0.png=sce_sys/icon0.png
+			--add ../sce_sys/pic0.png=sce_sys/pic0.png
 			--add ../sce_sys/livearea/contents/bg.png=sce_sys/livearea/contents/bg.png
 			--add ../sce_sys/livearea/contents/startup.png=sce_sys/livearea/contents/startup.png
 			--add ../sce_sys/livearea/contents/template.xml=sce_sys/livearea/contents/template.xml
