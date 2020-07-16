@@ -69,7 +69,7 @@ static void vita_init() {
   // This is only used for PIN codes, doesn't really matter
   srand(time(NULL));
 
-  printf("Vita Moonlight %d.%d.%d (%s)\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, COMPILE_OPTIONS);
+  //printf("Vita Moonlight %d.%d.%d (%s)\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, COMPILE_OPTIONS);
 
   int ret = 0;
 
@@ -86,7 +86,7 @@ static void vita_init() {
   int s = sceNetSocket("", SCE_NET_AF_INET, SCE_NET_SOCK_STREAM, 0);
   sceNetSocketClose(s);
   if (s >= 20) {
-    printf("Cycling sockets...\n");
+    //printf("Cycling sockets...\n");
     int c = 0;
     do {
       c = sceNetSocket("", SCE_NET_AF_INET, SCE_NET_SOCK_STREAM, 0);
@@ -115,15 +115,15 @@ int main(int argc, char* argv[]) {
     loop_forever();
   }
 
-  sceIoMkdir("ux0:/data/moonlight", 0777);
-  config_path = "ux0:data/moonlight/moonlight.conf";
+  sceIoMkdir("ux0:/data/exhale", 0777);
+  config_path = "ux0:data/exhale/exhale.conf";
   config_parse(argc, argv, &config);
-  strcpy(config.key_dir, "ux0:data/moonlight/");
+  strcpy(config.key_dir, "ux0:data/exhale/");
 
   vitapower_config(config);
   vitainput_config(config);
 
-  config.log_file = fopen("ux0:data/moonlight/moonlight.log", "w");
+  config.log_file = fopen("ux0:data/exhale/exhale.log", "w");
 
   load_all_known_devices();
 

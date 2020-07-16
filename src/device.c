@@ -10,7 +10,7 @@
 #include "device.h"
 #include "debug.h"
 
-#define DATA_DIR "ux0:data/moonlight"
+#define DATA_DIR "ux0:data/exhale"
 #define DEVICE_FILE "device.ini"
 
 #define BOOL(v) strcmp((v), "true") == 0

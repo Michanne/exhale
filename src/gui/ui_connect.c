@@ -192,6 +192,7 @@ int ui_connect_loop(int id, void *context, const input_data *input) {
       if (ret == GS_OK) {
         connection_paired();
         server.currentGame = 0;
+        sceKernelDelayThread(1000 * 1000);
         return QUIT_RELOAD;
       }
       display_error("Quitting failed: %d", ret);
@@ -220,6 +221,8 @@ int ui_connect_loop(int id, void *context, const input_data *input) {
                 display_error("Failed to exit running application: %d", ret);
                 return 0;
               }
+
+              sceKernelDelayThread(1000 * 1000);
             }
 
             connection_paired();
